@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+{% endblock %}
+{% block content %}
+<div class="container text-center mt-5">
+    <h1 class="display-4 text-white">{{app}}</h1>
+</div>
+<div class="loginContainer">
+    <div class="inputHold">
+        <input type="text" class="flag" placeholder="Flag">
+    </div>
+        <button class="loginButton">Access</button>
+    </div>
+</div>
+{% endblock %}
