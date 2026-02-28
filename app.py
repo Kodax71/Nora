@@ -3,7 +3,9 @@ from flask import (
     render_template,
     request,
     jsonify,
-    send_file
+    send_file,
+    redirect,
+    url_for
 )
 from pathlib import Path
 from werkzeug.utils import secure_filename
@@ -29,13 +31,13 @@ def token_gen(length=12):
     chars = string.ascii_letters + string.digits
     return ''.join(random.choice(chars) for _ in range(length))
 
+database = []
 
 def load_database():
     """
     Dynamically build file database.
     This avoids crashing at startup.
     """
-    database = []
 
     for file in UPLOAD_FOLDER.iterdir():
         if file.is_file():
@@ -48,7 +50,13 @@ def load_database():
 
     return database
 
-
+def filedelete(token):
+    for item in database:
+        if token in item["token"]:
+            Path(item["path"]).unlink()
+            database.remove(item)
+            return 200
+    return 404
 # ----------------------------
 # Routes
 # ----------------------------
@@ -75,16 +83,15 @@ def upload():
 
     return jsonify({"message": "File uploaded successfully"}), 200
 
-
 @app.route("/songs")
 def songs():
-    database = load_database()
+    if not database:
+        return redirect(url_for('scan'))
     return jsonify(database)
 
 
 @app.route("/songs/<token>")
 def file_access(token):
-    database = load_database()
 
     for item in database:
         if item["token"] == token:
@@ -100,8 +107,19 @@ def file_access(token):
 @app.route("/test")
 def test():
     return "App is working!"
+@app.route("/clear/<token>")
+def clear(token):
+    result = filedelete(token)
+    if result == 200:
+        return redirect(url_for('scan'))
+    return jsonify({"message": "Failed to delete file"}), 404
 
-
+@app.route("/scan")
+def scan():
+    load_database()
+    if not database:
+        return redirect(url_for('index'))
+    return redirect(url_for('songs'))
 # ----------------------------
 # Entry
 # ----------------------------
